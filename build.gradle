@@ -1,6 +1,7 @@
 plugins {
     id 'org.springframework.boot' version '2.6.6'
     id 'io.spring.dependency-management' version '1.0.11.RELEASE'
+    id 'idea'
     id 'java'
 }
 
@@ -25,8 +26,19 @@ dependencies {
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.amqp:spring-rabbit-test'
+    implementation 'org.eclipse.milo:sdk-server:0.6.3'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+javadoc {
+    source = sourceSets.main.allJava
+}
+
+idea {
+    module {
+        downloadJavadoc = true
+    }
 }
