@@ -21,4 +21,8 @@ public interface OpcOutputs {
     String getOperationState();
 
     void setOperationState(String state);
+
+    public boolean isDataReady();
+
+    public void setDataReady(boolean value);
 }

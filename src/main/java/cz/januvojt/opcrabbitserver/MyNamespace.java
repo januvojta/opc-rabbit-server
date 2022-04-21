@@ -1,5 +1,7 @@
 package cz.januvojt.opcrabbitserver;
 
+import cz.januvojt.opcrabbitserver.constants.Constants;
+import cz.januvojt.opcrabbitserver.rabbit.Sender;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.milo.opcua.sdk.core.Reference;
 import org.eclipse.milo.opcua.sdk.server.OpcUaServer;
@@ -21,12 +23,16 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.ubyte;
+
 @Slf4j
 @Component
 public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOutputs {
     private final SubscriptionModel subscriptionModel;
     private final MyOpcVariableBuilder builder;
+    private final Sender sender;
 
+    private volatile boolean dataReady;
     private volatile boolean operationStarted;
     private volatile boolean operationFinished;
     private volatile int errorNumber;
@@ -34,9 +40,10 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
     private volatile String operationState = "";
 
 
-    public MyNamespace(OpcUaServer server, @Value("${opcua.application.namespace.uri}") String namespaceUri) {
+    public MyNamespace(OpcUaServer server, @Value("${opcua.application.namespace.uri}") String namespaceUri, Sender sender) {
         super(server, namespaceUri);
         this.subscriptionModel = new SubscriptionModel(server, this);
+        this.sender = sender;
 
         getLifecycleManager().addLifecycle(subscriptionModel);
         getLifecycleManager().addStartupTask(this::registerNodes);
@@ -59,10 +66,10 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
                 .setName(getNamespaceIndex(), inputFolder, "programNumber")
                 .setDataType(Identifiers.Byte)
                 .setReadWriteAccess()
-                .setValue(new Variant(0))
+                .setValue(new Variant(ubyte(0)))
                 .setAttributeObserver(
                         (node, attributeId, value) -> {
-                            //TODO: add hook
+                            sender.sendMessage(node.getBrowseName().getName(), ((DataValue) value).getValue().getValue().toString());
                             System.out.println("Value of the node " + node.getBrowseName().getName() + " is: " + ((DataValue) value).getValue().getValue().toString());
                         }
                 )
@@ -76,10 +83,16 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
                 .setValue(new Variant(false))
                 .setAttributeObserver(
                         (node, attributeId, value) -> {
-                            //TODO: add hook
+                            sender.sendMessage(node.getBrowseName().getName(), ((DataValue) value).getValue().getValue().toString());
                             System.out.println("Value of the node " + node.getBrowseName().getName() + " is: " + ((DataValue) value).getValue().getValue().toString());
                         }
                 )
+                .setAttributeFilter(AttributeFilters.getValue(
+                        ctx -> {
+                            log.info("DataReady value is : " + dataReady);
+                            return new DataValue(new Variant(dataReady));
+                        }
+                ))
                 .build();
         registerNodeToFolder(inputFolder, dataReadyNode);
 
@@ -90,7 +103,7 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
                 .setValue(new Variant(0))
                 .setAttributeObserver(
                         (node, attributeId, value) -> {
-                            //TODO: add hook
+                            sender.sendMessage(node.getBrowseName().getName(), ((DataValue) value).getValue().getValue().toString());
                             System.out.println("Value of the node " + node.getBrowseName().getName() + " is: " + ((DataValue) value).getValue().getValue().toString());
                         }
                 )
@@ -104,7 +117,7 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
                 .setValue(new Variant(0))
                 .setAttributeObserver(
                         (node, attributeId, value) -> {
-                            //TODO: add hook
+                            sender.sendMessage(node.getBrowseName().getName(), ((DataValue) value).getValue().getValue().toString());
                             System.out.println("Value of the node " + node.getBrowseName().getName() + " is: " + ((DataValue) value).getValue().getValue().toString());
                         }
                 )
@@ -113,7 +126,7 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
 
         //Output folder nodes
         UaVariableNode operationStartedNode = builder
-                .setName(getNamespaceIndex(), inputFolder, "operationStarted")
+                .setName(getNamespaceIndex(), inputFolder, Constants.operationStarted)
                 .setDataType(Identifiers.Boolean)
                 .setReadOnlyAccess()
                 .setValue(new Variant(operationStarted))
@@ -127,7 +140,7 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
         registerNodeToFolder(outputFolder, operationStartedNode);
 
         UaVariableNode operationFinishedNode = builder
-                .setName(getNamespaceIndex(), inputFolder, "operationFinished")
+                .setName(getNamespaceIndex(), inputFolder, Constants.operationFinished)
                 .setDataType(Identifiers.Boolean)
                 .setReadOnlyAccess()
                 .setValue(new Variant(operationFinished))
@@ -141,7 +154,7 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
         registerNodeToFolder(outputFolder, operationFinishedNode);
 
         UaVariableNode errorNumberNode = builder
-                .setName(getNamespaceIndex(), inputFolder, "errorNumber")
+                .setName(getNamespaceIndex(), inputFolder, Constants.errorNumber)
                 .setDataType(Identifiers.Int32)
                 .setReadOnlyAccess()
                 .setValue(new Variant(errorNumber))
@@ -155,7 +168,7 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
         registerNodeToFolder(outputFolder, errorNumberNode);
 
         UaVariableNode errorStringNode = builder
-                .setName(getNamespaceIndex(), inputFolder, "errorString")
+                .setName(getNamespaceIndex(), inputFolder, Constants.errorString)
                 .setDataType(Identifiers.String)
                 .setReadOnlyAccess()
                 .setValue(new Variant(errorString))
@@ -169,7 +182,7 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
         registerNodeToFolder(outputFolder, errorStringNode);
 
         UaVariableNode operationStateNode = builder
-                .setName(getNamespaceIndex(), inputFolder, "operationState")
+                .setName(getNamespaceIndex(), inputFolder, Constants.operationState)
                 .setDataType(Identifiers.String)
                 .setReadOnlyAccess()
                 .setValue(new Variant(operationState))
@@ -283,5 +296,15 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
     @Override
     public void setOperationState(String value) {
         this.operationState = value;
+    }
+
+    @Override
+    public boolean isDataReady() {
+        return this.dataReady;
+    }
+
+    @Override
+    public void setDataReady(boolean value) {
+        this.dataReady = value;
     }
 }
