@@ -1,6 +1,7 @@
 package cz.januvojt.opcrabbitserver;
 
-import cz.januvojt.opcrabbitserver.constants.Constants;
+import cz.januvojt.opcrabbitserver.constants.FolderNames;
+import cz.januvojt.opcrabbitserver.constants.NodeNames;
 import cz.januvojt.opcrabbitserver.rabbit.Sender;
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.milo.opcua.sdk.core.Reference;
@@ -52,18 +53,18 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
     }
 
     private void registerNodes() {
-        UaFolderNode navServerFolder = createFolderNode(Identifiers.ObjectsFolder, "opcNavServer");
+        UaFolderNode navServerFolder = createFolderNode(Identifiers.ObjectsFolder, FolderNames.navServer);
         registerFolderToNode(Identifiers.ObjectsFolder, navServerFolder);
 
-        UaFolderNode outputFolder = createFolderNode(navServerFolder.getNodeId(), "RobotGenericOutput");
+        UaFolderNode outputFolder = createFolderNode(navServerFolder.getNodeId(), FolderNames.output);
         registerFolderToNode(navServerFolder.getNodeId(), outputFolder);
 
-        UaFolderNode inputFolder = createFolderNode(navServerFolder.getNodeId(), "RobotGenericInput");
+        UaFolderNode inputFolder = createFolderNode(navServerFolder.getNodeId(), FolderNames.input);
         registerFolderToNode(navServerFolder.getNodeId(), inputFolder);
 
         //Input folder nodes
         UaVariableNode programNumberNode = builder
-                .setName(getNamespaceIndex(), inputFolder, "programNumber")
+                .setName(getNamespaceIndex(), inputFolder, NodeNames.programNumber)
                 .setDataType(Identifiers.Byte)
                 .setReadWriteAccess()
                 .setValue(new Variant(ubyte(0)))
@@ -77,7 +78,7 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
         registerNodeToFolder(inputFolder, programNumberNode);
 
         UaVariableNode dataReadyNode = builder
-                .setName(getNamespaceIndex(), inputFolder, "dataReady")
+                .setName(getNamespaceIndex(), inputFolder, NodeNames.dataReady)
                 .setDataType(Identifiers.Boolean)
                 .setReadWriteAccess()
                 .setValue(new Variant(false))
@@ -89,7 +90,7 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
                 )
                 .setAttributeFilter(AttributeFilters.getValue(
                         ctx -> {
-                            log.info("DataReady value is : " + dataReady);
+                            log.info(NodeNames.dataReady + " value is : " + dataReady);
                             return new DataValue(new Variant(dataReady));
                         }
                 ))
@@ -97,7 +98,7 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
         registerNodeToFolder(inputFolder, dataReadyNode);
 
         UaVariableNode shelfIdNode = builder
-                .setName(getNamespaceIndex(), inputFolder, "shelfId")
+                .setName(getNamespaceIndex(), inputFolder, NodeNames.shelfId)
                 .setDataType(Identifiers.Int32)
                 .setReadWriteAccess()
                 .setValue(new Variant(0))
@@ -111,7 +112,7 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
         registerNodeToFolder(inputFolder, shelfIdNode);
 
         UaVariableNode robotIdNode = builder
-                .setName(getNamespaceIndex(), inputFolder, "robotId")
+                .setName(getNamespaceIndex(), inputFolder, NodeNames.robotId)
                 .setDataType(Identifiers.Int32)
                 .setReadWriteAccess()
                 .setValue(new Variant(0))
@@ -126,13 +127,13 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
 
         //Output folder nodes
         UaVariableNode operationStartedNode = builder
-                .setName(getNamespaceIndex(), inputFolder, Constants.operationStarted)
+                .setName(getNamespaceIndex(), inputFolder, NodeNames.operationStarted)
                 .setDataType(Identifiers.Boolean)
                 .setReadOnlyAccess()
                 .setValue(new Variant(operationStarted))
                 .setAttributeFilter(AttributeFilters.getValue(
                         ctx -> {
-                            log.info("OperationStarted value is : " + operationStarted);
+                            log.info(NodeNames.operationStarted+ " value is : " + operationStarted);
                             return new DataValue(new Variant(operationStarted));
                         }
                 ))
@@ -140,13 +141,13 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
         registerNodeToFolder(outputFolder, operationStartedNode);
 
         UaVariableNode operationFinishedNode = builder
-                .setName(getNamespaceIndex(), inputFolder, Constants.operationFinished)
+                .setName(getNamespaceIndex(), inputFolder, NodeNames.operationFinished)
                 .setDataType(Identifiers.Boolean)
                 .setReadOnlyAccess()
                 .setValue(new Variant(operationFinished))
                 .setAttributeFilter(AttributeFilters.getValue(
                         ctx -> {
-                            log.info("OperationFinished value is : " + operationFinished);
+                            log.info(NodeNames.operationFinished+" value is : " + operationFinished);
                             return new DataValue(new Variant(operationFinished));
                         }
                 ))
@@ -154,13 +155,13 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
         registerNodeToFolder(outputFolder, operationFinishedNode);
 
         UaVariableNode errorNumberNode = builder
-                .setName(getNamespaceIndex(), inputFolder, Constants.errorNumber)
+                .setName(getNamespaceIndex(), inputFolder, NodeNames.errorNumber)
                 .setDataType(Identifiers.Int32)
                 .setReadOnlyAccess()
                 .setValue(new Variant(errorNumber))
                 .setAttributeFilter(AttributeFilters.getValue(
                         ctx -> {
-                            log.info("ErrorNumber value is : " + errorNumber);
+                            log.info(NodeNames.errorNumber+"value is : " + errorNumber);
                             return new DataValue(new Variant(errorNumber));
                         }
                 ))
@@ -168,13 +169,13 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
         registerNodeToFolder(outputFolder, errorNumberNode);
 
         UaVariableNode errorStringNode = builder
-                .setName(getNamespaceIndex(), inputFolder, Constants.errorString)
+                .setName(getNamespaceIndex(), inputFolder, NodeNames.errorString)
                 .setDataType(Identifiers.String)
                 .setReadOnlyAccess()
                 .setValue(new Variant(errorString))
                 .setAttributeFilter(AttributeFilters.getValue(
                         ctx -> {
-                            log.info("ErrorString value is : " + errorString);
+                            log.info(NodeNames.errorString+" value is : " + errorString);
                             return new DataValue(new Variant(errorString));
                         }
                 ))
@@ -182,13 +183,13 @@ public class MyNamespace extends ManagedNamespaceWithLifecycle implements OpcOut
         registerNodeToFolder(outputFolder, errorStringNode);
 
         UaVariableNode operationStateNode = builder
-                .setName(getNamespaceIndex(), inputFolder, Constants.operationState)
+                .setName(getNamespaceIndex(), inputFolder, NodeNames.operationState)
                 .setDataType(Identifiers.String)
                 .setReadOnlyAccess()
                 .setValue(new Variant(operationState))
                 .setAttributeFilter(AttributeFilters.getValue(
                         ctx -> {
-                            log.info("OperationState value is : " + operationState);
+                            log.info(NodeNames.operationState+" value is : " + operationState);
                             return new DataValue(new Variant(operationState));
                         }
                 ))
