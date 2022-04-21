@@ -1,4 +1,6 @@
 opcua:
+  client:
+    name: "NavServer"
   server:
     address: 0.0.0.0
     port: 12686
@@ -7,3 +9,14 @@ opcua:
     uri: "urn:cz:cvut:ciirc:simulation:opcserver"
     namespace:
       uri: "${opcua.application.uri}:namespace"
+
+rabbit:
+  queue:
+    name: "NavserverOpc"
+  receiver:
+    queue:
+      name: "Navserver"
+
+spring:
+  rabbitmq:
+    host: "localhost"
